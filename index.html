@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="mn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Цаг агаарын апп</title>
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body
+    class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-300 to-indigo-500 p-4"
+  >
+    <div
+      class="bg-white/80 backdrop-blur-lg shadow-lg rounded-2xl p-6 w-full max-w-md text-center"
+    >
+      <h1 class="text-2xl font-bold text-gray-800 mb-4">
+        🌤️ Монголын цаг агаар
+      </h1>
+
+      <div class="flex gap-2 justify-center mb-4">
+        <select
+          id="city"
+          class="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
+        >
+          <option value="">Хот сонгоно уу</option>
+          <option value="Ulaanbaatar">Улаанбаатар</option>
+          <option value="Erdenet">Эрдэнэт</option>
+          <option value="Darkhan">Дархан</option>
+          <option value="Choibalsan">Чойбалсан</option>
+          <option value="Zamiin-Uud">Замын-Үүд</option>
+        </select>
+        <button
+          id="searchBtn"
+          class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition"
+        >
+          Харах
+        </button>
+      </div>
+
+      <p id="error" class="text-red-600 font-semibold mb-3"></p>
+
+      <div id="weather" class="hidden">
+        <div class="flex flex-col items-center">
+          <img id="icon" class="w-20 h-20" alt="Weather icon" />
+          <h2 id="city-name" class="text-xl font-semibold mt-2"></h2>
+          <p id="description" class="capitalize text-gray-600 mb-4"></p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 mb-6">
+          <div class="bg-blue-100 rounded-lg p-3">
+            <p class="text-gray-500 text-sm">Темп</p>
+            <p id="temp" class="text-xl font-bold text-gray-800"></p>
+          </div>
+          <div class="bg-blue-100 rounded-lg p-3">
+            <p class="text-gray-500 text-sm">Чийгшил</p>
+            <p id="humidity" class="text-xl font-bold text-gray-800"></p>
+          </div>
+          <div class="bg-blue-100 rounded-lg p-3">
+            <p class="text-gray-500 text-sm">Салхи</p>
+            <p id="wind" class="text-xl font-bold text-gray-800"></p>
+          </div>
+        </div>
+
+        <canvas id="tempChart" height="150"></canvas>
+      </div>
+    </div>
+
+    <script>
+      const apiKey = "298b95adcad4e9a5551a6bdc3d62cc7e";
+      const searchBtn = document.getElementById("searchBtn");
+      const weatherDiv = document.getElementById("weather");
+      const errorDiv = document.getElementById("error");
+      const citySelect = document.getElementById("city");
+      let chartInstance = null;
+
+      searchBtn.addEventListener("click", () => {
+        const city = citySelect.value;
+        if (!city) {
+          showError("Хот сонгоно уу!");
+          return;
+        }
+        getWeather(city);
+      });
+
+      async function getWeather(city) {
+        const url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric&lang=mn`;
+        await fetchWeather(url);
+      }
+
+      async function fetchWeather(url) {
+        try {
+          const response = await fetch(url);
+          const data = await response.json();
+          if (response.status === 401) {
+            showError("API түлхүүр буруу байна.");
+            return;
+          } else if (response.status === 404) {
+            showError("Хот олдсонгүй.");
+            return;
+          }
+          displayWeather(data);
+        } catch {
+          showError("Холболтын алдаа гарлаа.");
+        }
+      }
+
+      function displayWeather(data) {
+        errorDiv.textContent = "";
+        weatherDiv.classList.remove("hidden");
+        const current = data.list[0];
+        document.getElementById("city-name").textContent =
+          data.city.name + ", " + data.city.country;
+        document.getElementById("description").textContent =
+          current.weather[0].description;
+        document.getElementById("temp").textContent =
+          current.main.temp.toFixed(1) + "°C";
+        document.getElementById("humidity").textContent =
+          current.main.humidity + "%";
+        document.getElementById("wind").textContent =
+          current.wind.speed + " м/с";
+        document.getElementById(
+          "icon"
+        ).src = `https://openweathermap.org/img/wn/${current.weather[0].icon}@2x.png`;
+
+        const labels = data.list
+          .slice(0, 8)
+          .map((i) => i.dt_txt.split(" ")[1].slice(0, 5));
+        const temps = data.list.slice(0, 8).map((i) => i.main.temp);
+        drawChart(labels, temps);
+      }
+
+      function drawChart(labels, temps) {
+        const ctx = document.getElementById("tempChart").getContext("2d");
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: "Температур (°C)",
+                data: temps,
+                borderColor: "rgba(59,130,246,1)",
+                backgroundColor: "rgba(59,130,246,0.2)",
+                fill: true,
+                tension: 0.3,
+                borderWidth: 2,
+              },
+            ],
+          },
+          options: {
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ticks: { color: "#555" } },
+              y: { ticks: { color: "#555" } },
+            },
+          },
+        });
+      }
+
+      function showError(message) {
+        weatherDiv.classList.add("hidden");
+        errorDiv.textContent = "⚠️ " + message;
+      }
+    </script>
+  </body>
+</html>
