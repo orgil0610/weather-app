@@ -4,9 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Цаг агаарын апп</title>
-    <!-- Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body
@@ -85,7 +83,12 @@
       });
 
       async function getWeather(city) {
-        const url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric&lang=mn`;
+        let url;
+        if (city === "Zamiin-Uud") {
+          url = `https://api.openweathermap.org/data/2.5/forecast?lat=43.7847&lon=111.965&appid=${apiKey}&units=metric&lang=mn`;
+        } else {
+          url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric&lang=mn`;
+        }
         await fetchWeather(url);
       }
 
@@ -119,7 +122,7 @@
         document.getElementById("humidity").textContent =
           current.main.humidity + "%";
         document.getElementById("wind").textContent =
-          current.wind.speed + " м/с";
+          current.wind.speed + "м/с";
         document.getElementById(
           "icon"
         ).src = `https://openweathermap.org/img/wn/${current.weather[0].icon}@2x.png`;

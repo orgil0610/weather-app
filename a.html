@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="mn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Монголын Хотуудын Температур</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        background-color: #f4f4f4;
+        padding: 20px;
+      }
+
+      .weather-container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 500px;
+        margin: auto;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        text-align: center;
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      li {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="weather-container">
+      <h1>Монголын Хотуудын Температур</h1>
+      <ul id="cities-list"></ul>
+    </div>
+
+    <script>
+      const apiKey = "05a1756ce51b315727e3f13fb220ed8e";
+      const cities = [
+        { name: "Улаанбаатар", lat: 47.8864, lon: 106.9057 },
+        { name: "Эрдэнэт", lat: 49.0333, lon: 104.082 },
+        { name: "Дархан", lat: 49.4867, lon: 105.9228 },
+      ];
+
+      const list = document.getElementById("cities-list");
+
+      cities.forEach((city) => {
+        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${city.lat}&lon=${city.lon}&appid=${apiKey}&units=metric`;
+
+        fetch(url)
+          .then((response) => response.json())
+          .then((data) => {
+            const temp = Math.round(data.main.temp);
+            const country = data.sys.country;
+            const li = document.createElement("li");
+            li.textContent = `${city.name} (${country}): ${temp}°C`;
+            list.appendChild(li);
+          })
+          .catch((error) => {
+            const li = document.createElement("li");
+            li.textContent = `${city.name}: мэдээлэл авахад алдаа гарлаа.`;
+            list.appendChild(li);
+            console.error(`${city.name} - Алдаа:`, error);
+          });
+      });
+    </script>
+  </body>
+</html>
